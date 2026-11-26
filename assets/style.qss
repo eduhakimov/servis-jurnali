@@ -1,0 +1,19 @@
+QListWidget#Rail { background: #2b4a2f; border: none; border-radius: 0; padding: 10px 4px; outline: 0; }
+QListWidget#Rail::item { color: #e6dccb; border-radius: 8px; padding: 6px 2px; margin: 2px 0; }
+QListWidget#Rail::item:hover { background: #355a3a; }
+QListWidget#Rail::item:selected { background: #fffdf8; color: #2b4a2f; font-weight: bold; }
+QFrame#CommandBar { background: {surface}; border-bottom: 1px solid {border}; }
+QScrollArea#DetailScroll { border: none; border-left: 1px solid {border}; background: {surface}; }
+QScrollArea#DetailScroll > QWidget > QWidget { background: {surface}; }
+QLabel#OrderNumber { font-size: 15pt; font-weight: bold; }
+QLabel#Section { font-size: 10.5pt; font-weight: bold; color: {accent}; padding-top: 6px; border-bottom: 1px solid {border}; }
+QLabel#Totals { font-size: 11pt; font-weight: bold; }
+QFrame#Kpi { background: {surface}; border: 1px solid {border}; border-radius: 6px; }
+QLabel#KpiTitle { color: {muted}; }
+QLabel#KpiValue { font-size: 22pt; font-weight: bold; }
+QListWidget#PlainList { border: none; background: transparent; }
+QListWidget#PlainList::item { padding: 6px 2px; border-bottom: 1px solid {border}; }
+QFrame#Card { border-radius: 6px; }
+QPushButton { border-radius: 5px; }
+QLabel#Title { font-size: 17pt; font-weight: bold; }
+* { font-size: 10.5pt; }
