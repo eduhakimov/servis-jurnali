@@ -680,7 +680,7 @@ class RevenueChart(QWidget):
             p.setPen(QPen(grid, 1))
             p.drawLine(left, int(y), w - 8, int(y))
             val = nice * (4 - i) / 4
-            label = f"{val / 1e6:g}M" if nice >= 1e6 else f"{val / 1e3:g}K" if nice >= 1e3 else f"{val:g}"
+            label = "0" if val == 0 else f"{val / 1e6:g}M" if nice >= 1e6 else f"{val / 1e3:g}K" if nice >= 1e3 else f"{val:g}"
             p.setPen(muted)
             p.drawText(QRectF(0, y - 8, left - 8, 16), Qt.AlignRight | Qt.AlignVCenter, label)
         n = len(self.data)
