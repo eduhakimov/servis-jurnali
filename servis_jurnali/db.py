@@ -54,6 +54,49 @@ def digits(s: str) -> str:
     return "".join(c for c in (s or "") if c.isdigit())
 
 
+# ---------------------------------------------------------------------- qurilma paroli
+# Parol bazada ochiq saqlanmaydi: Windows DPAPI bilan shifrlanadi (faqat shu kompyuterdagi shu
+# foydalanuvchi ocha oladi). Zaxira boshqa kompyuterda tiklansa, parol bo'sh ko'rinadi.
+_PFX = "dpapi:"
+
+
+def _dpapi(data: bytes, protect: bool) -> bytes:
+    import ctypes
+
+    class _Blob(ctypes.Structure):
+        _fields_ = [("cbData", ctypes.c_uint32), ("pbData", ctypes.POINTER(ctypes.c_char))]
+
+    buf = ctypes.create_string_buffer(data, len(data))
+    src = _Blob(len(data), ctypes.cast(buf, ctypes.POINTER(ctypes.c_char)))
+    dst = _Blob()
+    fn = ctypes.windll.crypt32.CryptProtectData if protect else ctypes.windll.crypt32.CryptUnprotectData
+    if not fn(ctypes.byref(src), None, None, None, None, 0x01, ctypes.byref(dst)):
+        raise OSError("DPAPI")
+    try:
+        return ctypes.string_at(dst.pbData, dst.cbData)
+    finally:
+        ctypes.windll.kernel32.LocalFree(dst.pbData)
+
+
+def protect(secret: str) -> str:
+    if not secret or os.name != "nt":
+        return secret or ""
+    import base64
+    return _PFX + base64.b64encode(_dpapi(secret.encode("utf-8"), True)).decode("ascii")
+
+
+def unprotect(value: str) -> str:
+    if not value or not value.startswith(_PFX):
+        return value or ""
+    if os.name != "nt":
+        return ""
+    import base64
+    try:
+        return _dpapi(base64.b64decode(value[len(_PFX):]), False).decode("utf-8")
+    except Exception:  # noqa: boshqa kompyuter yoki foydalanuvchida shifrlangan
+        return ""
+
+
 class DB:
     def __init__(self, path: str):
         self.path = path
@@ -67,6 +110,15 @@ class DB:
         except sqlite3.DatabaseError:
             self.con.close()        # fayl qulflanib qolmasin (buzilgan bazani chetga olish uchun)
             raise
+        self._encrypt_old_passwords()
+
+    def _encrypt_old_passwords(self):
+        """Avvalgi versiyalarda ochiq saqlangan qurilma parollarini shifrlaydi."""
+        rows = self.q("SELECT id, password FROM devices WHERE password<>'' AND password NOT LIKE ?", (_PFX + "%",))
+        if rows and os.name == "nt":
+            for r in rows:
+                self.con.execute("UPDATE devices SET password=? WHERE id=?", (protect(r["password"]), r["id"]))
+            self.con.commit()
 
     def close(self):
         self.con.close()
@@ -127,16 +179,21 @@ class DB:
                    note="") -> int:
         cur = self.con.execute("INSERT INTO devices(client_id, type, brand, model, serial, password, accessories, note) "
                                "VALUES(?,?,?,?,?,?,?,?)",
-                               (client_id, type, brand.strip(), model.strip(), serial.strip(), password, accessories.strip(),
-                                note.strip()))
+                               (client_id, type, brand.strip(), model.strip(), serial.strip(), protect(password),
+                                accessories.strip(), note.strip()))
         self.con.commit()
         return cur.lastrowid
 
     def update_device(self, did: int, **kw):
+        if "password" in kw:
+            kw["password"] = protect(kw["password"])
         self._update("devices", did, kw, ("type", "brand", "model", "serial", "password", "accessories", "note"))
 
     def devices_of(self, client_id: int) -> List[dict]:
-        return [dict(r) for r in self.q("SELECT * FROM devices WHERE client_id=? ORDER BY id DESC", (client_id,))]
+        out = [dict(r) for r in self.q("SELECT * FROM devices WHERE client_id=? ORDER BY id DESC", (client_id,))]
+        for d in out:
+            d["password"] = unprotect(d.get("password"))
+        return out
 
     # ------------------------------------------------------------------ ustalar
     def add_technician(self, name, phone="") -> int:
@@ -214,6 +271,8 @@ class DB:
     @staticmethod
     def _enrich(r) -> dict:
         d = dict(r)
+        if "password" in d:
+            d["password"] = unprotect(d["password"])
         d["total"] = round((d.get("labor_price") or 0) + (d.get("parts_total") or 0), 2)
         d["due"] = round(d["total"] - (d.get("prepayment") or 0), 2)
         d["device"] = " ".join(x for x in (d.get("brand"), d.get("model")) if x)

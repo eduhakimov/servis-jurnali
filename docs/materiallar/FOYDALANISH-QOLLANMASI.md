@@ -1,6 +1,6 @@
 # Servis jurnali: Foydalanish qo‘llanmasi
 
-Muallif: Hakimov Bahtiyorjon. Versiya: 1.0.2.
+Muallif: Hakimov Bahtiyorjon. Versiya: 1.0.3.
 
 
 ## 1. Umumiy ma’lumot
@@ -147,7 +147,7 @@ Servis markazi ma’lumotlari va hujjat shartlari dastur bazasida saqlanadi, shu
 - Barcha ma’lumotlar %APPDATA%\BahtiyorSoft\servis-jurnali papkasidagi “servis.db” faylida saqlanadi. Dastur internetga ulanmaydi.
 - Dastur yopilganda (avtomatik zaxira yoqilgan bo‘lsa) bazaning nusxasi shu papkadagi “backups” papkasiga saqlanadi, oxirgi 10 ta nusxa qoldiriladi. Qo‘shimcha nusxani “Zaxira nusxa olish” tugmasi bilan istalgan joyga saqlash mumkin.
 - Baza fayli buzilgan bo‘lsa, dastur uni chetga olib, oxirgi avtomatik zaxiradan tiklaydi va bu haqda xabar beradi. Zaxira topilmasa, yangi bo‘sh baza ochiladi, eski fayl esa yonida saqlab qo‘yiladi.
-- Qurilma paroli oynada yulduzchalar bilan ko‘rsatiladi va “Ko‘rsatish” tugmasi bosilgandagina ochiladi. Bazada parol shifrlanmagan holda saqlanadi, shuning uchun ustaxona kompyuteriga parol qo‘ying va baza faylini begona shaxslarga bermang.
+- Qurilma paroli oynada yulduzchalar bilan ko‘rsatiladi va “Ko‘rsatish” tugmasi bosilgandagina ochiladi. Bazada parol Windows shifrlashi (DPAPI) bilan saqlanadi va uni faqat shu kompyuterdagi shu foydalanuvchi ocha oladi; boshqa ma’lumotlar uchun ustaxona kompyuteriga parol qo‘ying va baza faylini begona shaxslarga bermang.
 - PDF kvitansiya va aktlar “Hujjatlar\Servis jurnali” papkasida saqlanadi.
 - Mijozlarning telefon raqamlari va boshqa ma’lumotlari shaxsiy ma’lumotlar hisoblanadi; ularni faqat xizmat ko‘rsatish maqsadida ishlating.
 - Muhim ma’lumotlarni yo‘qotmaslik uchun haftasiga kamida bir marta qo‘lda zaxira nusxa olib, uni boshqa diskda yoki xotira qurilmasida saqlang.

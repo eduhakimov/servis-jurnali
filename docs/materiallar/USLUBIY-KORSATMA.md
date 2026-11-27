@@ -1,6 +1,6 @@
 # Servis jurnali: Uslubiy ko‘rsatma
 
-Muallif: Hakimov Bahtiyorjon. Versiya: 1.0.2.
+Muallif: Hakimov Bahtiyorjon. Versiya: 1.0.3.
 
 
 ## 1. Uslubiy ko‘rsatmaning maqsadi va vazifalari
