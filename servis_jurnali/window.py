@@ -20,7 +20,7 @@ from uzkit.widgets import Card, ask, error, header, info, open_path, primary_but
 from uzkit.window import BaseMainWindow
 
 from . import docs
-from .db import DB, DEVICE_TYPES, OPEN_STATUSES, STATUSES, fill_demo, fmt_money, today
+from .db import DB, DEVICE_TYPES, OPEN_STATUSES, STATUSES, fill_demo, fmt_money, open_or_recover, today
 from .strings import STRINGS
 from .ui import dot_icon, svg_icon
 
@@ -801,7 +801,7 @@ class ClientsPage(QWidget):
         self.search.setClearButtonEnabled(True)
         left.addWidget(self.search)
         self.table = _table([tr("f_client"), tr("f_phone"), tr("cl_orders"), tr("cl_spent"), tr("cl_last")], 0)
-        for i, w in enumerate([0, 140, 100, 130, 100]):
+        for i, w in enumerate([0, 140, 80, 130, 125]):
             if w:
                 self.table.setColumnWidth(i, w)
         left.addWidget(self.table, 1)
@@ -1141,7 +1141,11 @@ class MainWindow(BaseMainWindow):
             db.set_setting("currency", "so'm")
             return db
         base = self.settings.path.parent if self.settings is not None else data_dir(SLUG)
-        db = DB(str(Path(base) / "servis.db"))
+        db, state = open_or_recover(str(Path(base) / "servis.db"))
+        if state:
+            from PySide6.QtCore import QTimer
+            msg = tr("db_restored", f=state.split(":", 1)[1]) if state.startswith("restored:") else tr("db_reset")
+            QTimer.singleShot(0, lambda: warn(self, msg))
         if not db.technicians(active_only=False) and not db.get_setting("shop_name"):
             db.set_setting("shop_name", "Kompyuter ustasi")
             db.set_setting("currency", "so'm")

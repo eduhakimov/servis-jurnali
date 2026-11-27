@@ -60,9 +60,13 @@ class DB:
         os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
         self.con = sqlite3.connect(path)
         self.con.row_factory = sqlite3.Row
-        self.con.execute("PRAGMA foreign_keys = ON")
-        self.con.executescript(SCHEMA)
-        self.con.commit()
+        try:
+            self.con.execute("PRAGMA foreign_keys = ON")
+            self.con.executescript(SCHEMA)
+            self.con.commit()
+        except sqlite3.DatabaseError:
+            self.con.close()        # fayl qulflanib qolmasin (buzilgan bazani chetga olish uchun)
+            raise
 
     def close(self):
         self.con.close()
@@ -151,7 +155,9 @@ class DB:
     # ------------------------------------------------------------------ buyurtmalar
     def next_number(self, year: int = None) -> str:
         year = year or date.today().year
-        r = self.one("SELECT number FROM orders WHERE number LIKE ? ORDER BY number DESC LIMIT 1", (f"{year}-%",))
+        # matn bo'yicha saralash "2026-10000" ni "2026-9999" dan kichik deb biladi: son bo'yicha saralanadi
+        r = self.one("SELECT number FROM orders WHERE number LIKE ? "
+                     "ORDER BY CAST(substr(number, 6) AS INTEGER) DESC LIMIT 1", (f"{year}-%",))
         n = int(r["number"].split("-")[1]) + 1 if r else 1
         return f"{year}-{n:04d}"
 
@@ -306,6 +312,40 @@ class DB:
         sets = ", ".join(f"{k}=?" for k in kw)
         self.con.execute(f"UPDATE {table} SET {sets} WHERE id=?", (*kw.values(), rid))
         self.con.commit()
+
+
+def open_or_recover(path: str):
+    """Bazani ochadi. Fayl buzilgan bo'lsa u chetga olinadi (".buzilgan_<vaqt>") va eng yangi avtomatik
+    zaxiradan tiklanadi; zaxira bo'lmasa yangi bo'sh baza ochiladi.
+
+    Qaytaradi: (DB, holat) - holat: "" (hammasi joyida), "restored:<zaxira fayl>" yoki "new".
+    """
+    try:
+        db = DB(path)
+        if db.one("PRAGMA quick_check")[0] == "ok":
+            return db, ""
+        db.close()
+    except sqlite3.DatabaseError:
+        pass
+    import shutil
+    from pathlib import Path
+    p = Path(path)
+    if p.exists():
+        p.replace(p.with_name(f"{p.name}.buzilgan_{datetime.now():%Y%m%d_%H%M%S}"))
+    for b in sorted((p.parent / "backups").glob("servis_*.db"), reverse=True):
+        try:
+            shutil.copyfile(b, p)
+            db = DB(str(p))
+            if db.one("PRAGMA quick_check")[0] == "ok":
+                return db, f"restored:{b.name}"
+            db.close()
+        except (sqlite3.DatabaseError, OSError):
+            pass
+        try:
+            p.unlink()
+        except OSError:
+            pass
+    return DB(str(p)), "new"
 
 
 def warranty_until(order: dict) -> Optional[str]:

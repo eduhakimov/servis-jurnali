@@ -195,6 +195,9 @@ def export_excel(orders: List[dict], path: str, currency: str = ""):
                    o.get("problem"), tr("st_" + o["status"]) if o["status"] in STATUSES else o["status"],
                    o.get("labor_price") or 0, o.get("parts_total") or 0, o["total"], o.get("prepayment") or 0,
                    o.get("technician"), o.get("completed"), o.get("delivered")])
+        for c in ws[ws.max_row]:
+            if c.data_type == "f":      # "=..." bilan boshlangan matn formula bo'lib qolmasin
+                c.data_type = "s"
     widths = [11, 17, 22, 18, 26, 16, 36, 18, 12, 12, 12, 12, 16, 17, 17]
     for i, wdt in enumerate(widths):
         ws.column_dimensions[chr(65 + i)].width = wdt
